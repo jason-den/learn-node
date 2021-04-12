@@ -25,10 +25,28 @@ beforeEach(async () => {
 })
 
 test('Should signup a new user', async () => {
-  await request(app).post('/users').send(userTwo).expect(201)
+  const response = await request(app).post('/users').send(userTwo).expect(201)
+  const user = await User.findById(response.body.user._id)
+  expect(user).not.toBeNull()
+
+  expect(response.body).toMatchObject({
+    user: { name: user.name, email: user.email },
+    token: user.tokens[0].token,
+  })
+
+  expect(user.password).not.toBe(userOne.password)
 })
 test('Should login an exsisting user', async () => {
-  await request(app).post('/users/login').send(userOne).expect(200)
+  const response = await request(app)
+    .post('/users/login')
+    .send(userOne)
+    .expect(200)
+  expect(response.body.user._id).toEqual(String(userOneId))
+  const user = await User.findById(response.body.user._id)
+  expect(user).not.toBeNull()
+  expect(response.body).toMatchObject({
+    token: user.tokens[1].token,
+  })
 })
 describe('Should not login with wrong credentials', () => {
   test('wrong password', async () => {
@@ -71,7 +89,11 @@ describe('on delete account', () => {
       .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
       .send()
       .expect(200)
+
+    const user = await User.findById(userOneId)
+    expect(user).toBeNull()
   })
+
   test('should 401 for unauthenticated user', async () => {
     await request(app).delete('/users/me').send().expect(401)
   })
