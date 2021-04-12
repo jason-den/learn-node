@@ -1,28 +1,15 @@
-const { Types } = require('mongoose')
 const request = require('supertest')
 const app = require('../src/app')
 const User = require('../src/models/user')
-const jwt = require('jsonwebtoken')
 
-const userOneId = new Types.ObjectId()
-const userOne = {
-  _id: userOneId,
-  name: 'Jason',
-  email: 'jason.den@example.com',
-  password: 'MyPass77@#',
-  tokens: [{ token: jwt.sign({ _id: userOneId }, process.env.JWT_SECRET) }],
-}
+const { setupDB, userOne, userOneId } = require('./fixtures/db')
+beforeEach(setupDB)
+
 const userTwo = {
   name: 'Mark',
   email: 'mark.peter@example.com',
   password: 'HisPass77@#',
 }
-
-beforeEach(async () => {
-  await User.deleteMany()
-  const user = new User(userOne)
-  await user.save()
-})
 
 test('Should signup a new user', async () => {
   const response = await request(app).post('/users').send(userTwo).expect(201)
@@ -97,4 +84,14 @@ describe('on delete account', () => {
   test('should 401 for unauthenticated user', async () => {
     await request(app).delete('/users/me').send().expect(401)
   })
+})
+
+test('Should upload avatar image', async () => {
+  await request(app)
+    .post('/users/me/avatar')
+    .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+    .attach('avatar', 'tests/fixtures/profile-pic.png')
+    .expect(200)
+  const user = await User.findById(userOneId)
+  expect(user.avatar).toEqual(expect.any(Buffer))
 })
