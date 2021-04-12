@@ -14,7 +14,7 @@ const userOne = {
 }
 const userTwo = {
   name: 'Mark',
-  email: 'Mark.Peter@example.com',
+  email: 'mark.peter@example.com',
   password: 'HisPass77@#',
 }
 
