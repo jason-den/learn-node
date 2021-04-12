@@ -63,3 +63,16 @@ describe('on /users/me', () => {
     await request(app).get('/users/me').send().expect(401)
   })
 })
+
+describe('on delete account', () => {
+  test('should delete account for user', async () => {
+    await request(app)
+      .delete('/users/me')
+      .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+      .send()
+      .expect(200)
+  })
+  test('should 401 for unauthenticated user', async () => {
+    await request(app).delete('/users/me').send().expect(401)
+  })
+})
